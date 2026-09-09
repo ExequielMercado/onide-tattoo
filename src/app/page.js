@@ -14,11 +14,12 @@ export default function Home() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {});
-    }
-  }, []);
+  if (videoRef.current) {
+    videoRef.current.muted = true;
+    videoRef.current.setAttribute('muted', '');
+    videoRef.current.play().catch(() => {});
+  }
+}, []);
 
   return (
     <>
