@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,11 +30,11 @@ export default function Header() {
         </nav>
 
         <button
-          className="md:hidden"
+          className="md:hidden p-2"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Open menu"
         >
-          {menuOpen ? '✕' : '☰'}
+          {menuOpen ? <X size={32} /> : <Menu size={32} />}
         </button>
       </div>
 

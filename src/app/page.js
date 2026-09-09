@@ -1,19 +1,30 @@
 'use client';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import About from '../components/About';
-import Stats from '../components/Stats';
-import PortfolioPreview from '../components/PortfolioPreview';
+import { useEffect, useRef } from 'react';
+import Stats from '@/components/Stats';
+import About from '@/components/About';
+import PortfolioPreview from '@/components/PortfolioPreview';
 
 const headline = "Bold Ink. Precise Detail.";
 
 export default function Home() {
   const words = headline.split(' ');
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
 
   return (
     <>
       <section className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-black text-white">
         <video
+          ref={videoRef}
           autoPlay
           muted
           loop
@@ -23,7 +34,7 @@ export default function Home() {
           <source src="/videos/hero-realism.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/60" />
-        
+
         <div className="relative z-10 text-center px-6">
           <h1 className="text-4xl md:text-7xl font-bold uppercase tracking-tight flex flex-wrap justify-center gap-x-4">
             {words.map((word, i) => (
