@@ -73,11 +73,13 @@ export default function BookingForm() {
   function selectDate(date) {
     setSelectedDate(date);
     setSelectedTime('');
+    setStatus('idle');
     setForm((currentForm) => ({ ...currentForm, preferredDates: '' }));
   }
 
   function selectTime(time) {
     setSelectedTime(time);
+    setStatus('idle');
     setForm((currentForm) => ({
       ...currentForm,
       preferredDates: formatDateTime(selectedDate, time),
@@ -115,6 +117,11 @@ export default function BookingForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
+
+      if (response.status === 409) {
+        setStatus('conflict');
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`Booking request failed with status ${response.status}`);
@@ -282,6 +289,11 @@ export default function BookingForm() {
           {selectedDate && selectedTime
             ? 'Something went wrong. Please try again or email directly.'
             : 'Please select a date and available time before sending.'}
+        </p>
+      )}
+      {status === 'conflict' && (
+        <p className="text-center text-sm text-amber-300">
+          That time is already booked. Please choose another available slot.
         </p>
       )}
     </form>
