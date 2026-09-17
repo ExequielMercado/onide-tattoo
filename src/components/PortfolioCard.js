@@ -26,7 +26,7 @@ export default function PortfolioCard({ slug, label, thumbnail, video }) {
   return (
     <Link href={`/portafolio/${slug}`}>
       <div
-        className="relative h-80 overflow-hidden cursor-pointer group"
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden sm:h-80 sm:aspect-auto"
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
       >

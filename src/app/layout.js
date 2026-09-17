@@ -1,6 +1,7 @@
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import WhatsAppButton from '../components/WhatsAppButton';
 
 export const metadata = {
   metadataBase: new URL('https://onidetattoo.com'),
@@ -25,10 +26,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body className="bg-black">
+      <body className="min-h-screen bg-black text-white">
         <Header />
-        <main>{children}</main>
+        <main className="min-h-screen bg-black text-white">{children}</main>
         <Footer />
+        <WhatsAppButton />
       </body>
     </html>
   );

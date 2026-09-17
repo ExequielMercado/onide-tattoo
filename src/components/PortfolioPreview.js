@@ -6,19 +6,19 @@ const categories = [
   { 
     slug: 'black-and-grey', 
     label: 'Black & Grey', 
-    thumbnail: '/portfolio/black-and-grey.jpg', 
+    thumbnail: '/images/portfolio/black-and-grey/onide-tattoo-black%20%26%20grey%2001.jpg',
     video: '/videos/portfolio/black-and-grey.mp4' 
   },
   { 
     slug: 'realism', 
     label: 'Realism', 
-    thumbnail: '/portfolio/realism.jpg',
+    thumbnail: '/images/portfolio/realism/onide-tattoo-realism-01.jpg',
     video: '/videos/portfolio/realism.mp4' 
   },
   { 
     slug: 'bio-organic', 
     label: 'Bio-Organic', 
-    thumbnail: '/portfolio/bio-organic.jpg', 
+    thumbnail: '/images/portfolio/bio-organic/onide-tattoo-bio%20organic%2001.jpg',
     video: '/videos/portfolio/bio-organic.mp4' 
   },
 ];

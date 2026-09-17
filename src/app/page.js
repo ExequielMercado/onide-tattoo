@@ -7,7 +7,7 @@ import Stats from '@/components/Stats';
 import About from '@/components/About';
 import PortfolioPreview from '@/components/PortfolioPreview';
 
-const headline = "Bold Ink. Precise Detail.";
+const headline = "Get Tattooed";
 
 export default function Home() {
   const words = headline.split(' ');
@@ -37,7 +37,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/60" />
 
         <div className="relative z-10 text-center px-6">
-          <h1 className="text-4xl md:text-7xl font-bold uppercase tracking-tight flex flex-wrap justify-center gap-x-4">
+          <h1 className="flex flex-wrap justify-center gap-x-4 text-5xl font-bold tracking-[0.18em] md:text-7xl">
             {words.map((word, i) => (
               <motion.span
                 key={i}
@@ -56,7 +56,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="mt-6 text-lg md:text-xl text-gray-300"
           >
-            Onide — Tattoo Artist in Edmonton, AB
+            Onide — Currently in Edmonton, AB
           </motion.p>
 
           <motion.div
@@ -67,9 +67,9 @@ export default function Home() {
           >
             <Link
               href="/book"
-              className="inline-block border border-white px-8 py-3 uppercase tracking-widest hover:bg-white hover:text-black transition"
+              className="relative z-10 inline-block border border-white/20 bg-white/10 px-8 py-3 text-white backdrop-blur-md transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
             >
-              Book a Consultation
+              Book a free consultation
             </Link>
           </motion.div>
         </div>
