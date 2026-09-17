@@ -10,12 +10,7 @@ function startOfDay(date) {
 }
 
 function getAvailableSlots(date) {
-  const occupiedSlots = new Set([
-    (date.getDate() + date.getMonth()) % WORKING_SLOTS.length,
-    (date.getDate() * 2 + date.getDay()) % WORKING_SLOTS.length,
-  ]);
-
-  return WORKING_SLOTS.filter((_, index) => !occupiedSlots.has(index));
+  return WORKING_SLOTS;
 }
 
 function formatDateTime(date, time) {

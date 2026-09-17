@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
@@ -10,19 +11,26 @@ function getCalendarIds() {
 }
 
 function createCalendarClient() {
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-  if (!clientEmail || !privateKey) {
+  if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
     throw new Error('Google Calendar credentials are not configured');
   }
 
+  // Limpieza exhaustiva de la llave privada
+  let rawKey = process.env.GOOGLE_PRIVATE_KEY || "";
+  // 1. Reemplazar saltos de línea escapados (\\n) por saltos reales (\n)
+  let cleanKey = rawKey.replace(/\\n/g, '\n');
+  // 2. Limpiar comillas dobles o simples que Next.js haya dejado pegadas en los extremos
+  cleanKey = cleanKey.replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+
   const auth = new google.auth.GoogleAuth({
     credentials: {
-      client_email: clientEmail,
-      private_key: privateKey,
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: cleanKey,
     },
-    scopes: ['https://www.googleapis.com/auth/calendar'],
+    scopes: [
+      'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/calendar.readonly'
+    ]
   });
 
   return google.calendar({ version: 'v3', auth });
@@ -32,7 +40,7 @@ export async function POST(request) {
   try {
     const booking = await request.json();
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    const calendarsToCheck = getCalendarIds();
+    const calendarsToCheck = [...new Set([...getCalendarIds(), calendarId].filter(Boolean))];
     const startTime = new Date(booking.preferredDates);
 
     if (!calendarId || calendarsToCheck.length === 0) {
@@ -51,7 +59,7 @@ export async function POST(request) {
       );
     }
 
-    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
     const calendar = createCalendarClient();
     const freeBusyResponse = await calendar.freebusy.query({
       requestBody: {
@@ -65,10 +73,7 @@ export async function POST(request) {
     const isBusy = busyCalendars.some((calendar) => (calendar.busy || []).length > 0);
 
     if (isBusy) {
-      return Response.json(
-        { error: 'That time is already booked. Please choose another slot.' },
-        { status: 409 },
-      );
+      return NextResponse.json({ error: 'Time slot is already booked' }, { status: 409 });
     }
 
     await calendar.events.insert({
@@ -93,7 +98,6 @@ export async function POST(request) {
         end: {
           dateTime: endTime.toISOString(),
         },
-        attendees: [{ email: booking.email }],
       },
     });
 
