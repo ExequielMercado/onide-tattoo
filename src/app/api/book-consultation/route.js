@@ -29,38 +29,29 @@ function createCalendarClient() {
 }
 
 export async function POST(request) {
-  let booking;
-
   try {
-    booking = await request.json();
-  } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+    const booking = await request.json();
+    const calendarId = process.env.GOOGLE_CALENDAR_ID;
+    const calendarsToCheck = getCalendarIds();
+    const startTime = new Date(booking.preferredDates);
 
-  const calendarId = process.env.GOOGLE_CALENDAR_ID;
-  const calendarsToCheck = getCalendarIds();
-  const startTime = new Date(booking.preferredDates);
+    if (!calendarId || calendarsToCheck.length === 0) {
+      throw new Error('Google Calendar IDs are not configured');
+    }
 
-  if (!calendarId || calendarsToCheck.length === 0) {
-    console.error('Google Calendar IDs are not configured');
-    return Response.json({ error: 'Booking service is not configured' }, { status: 500 });
-  }
+    if (
+      !booking.name ||
+      !booking.email ||
+      !booking.preferredDates ||
+      Number.isNaN(startTime.getTime())
+    ) {
+      return Response.json(
+        { error: 'Name, email, and a valid preferred date are required' },
+        { status: 400 },
+      );
+    }
 
-  if (
-    !booking.name ||
-    !booking.email ||
-    !booking.preferredDates ||
-    Number.isNaN(startTime.getTime())
-  ) {
-    return Response.json(
-      { error: 'Name, email, and a valid preferred date are required' },
-      { status: 400 },
-    );
-  }
-
-  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-
-  try {
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
     const calendar = createCalendarClient();
     const freeBusyResponse = await calendar.freebusy.query({
       requestBody: {
@@ -108,7 +99,7 @@ export async function POST(request) {
 
     return Response.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error('Google Calendar booking failed:', error);
+    console.error("DETALLE DEL ERROR:", error);
     return Response.json(
       { error: 'Unable to create the booking right now. Please try again later.' },
       { status: 500 },
