@@ -15,8 +15,8 @@ export default function About() {
           className="relative aspect-[4/5] w-full max-w-sm mx-auto"
         >
           <Image
-            src="/images/about/onide-portrait.png"
-            alt="Onide, tattoo artist in Edmonton, AB"
+            src="/kevin-about.jpg"
+            alt="Kevin, tattoo artist from Córdoba, Argentina"
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 400px"
@@ -32,15 +32,10 @@ export default function About() {
           <h2 className="text-3xl md:text-4xl uppercase tracking-widest mb-6">
             About Onide
           </h2>
-          <p className="text-gray-400 leading-relaxed mb-4">
-            Based in Edmonton, Alberta, Onide is a tattoo artist specializing
-            in Black &amp; Grey, Realism, and Bio-Organic work. Every piece
-            starts as a conversation — translating your idea into a design
-            that&apos;s built to last and true to your vision.
-          </p>
           <p className="text-gray-400 leading-relaxed">
-            Currently tattooing at Phantom Avenue, Edmonton&apos;s Whyte Ave
-            tattoo studio.
+            Kevin is a traveling tattoo artist from Córdoba, Argentina,
+            currently based in Edmonton, Alberta, specializing in Black &amp;
+            Grey Realism, Neo Tribal, Cover-ups, and Custom Projects.
           </p>
         </motion.div>
       </div>

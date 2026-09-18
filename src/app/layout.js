@@ -5,6 +5,10 @@ import WhatsAppButton from '../components/WhatsAppButton';
 
 export const metadata = {
   metadataBase: new URL('https://onidetattoo.com'),
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+  },
   title: 'Onide Tattoo | Tattoo Artist in Edmonton, AB',
   description: 'Onide — tattoo artist specializing in Black & Grey, Realism, and Bio-organic tattoos in Edmonton, Alberta.',
   openGraph: {

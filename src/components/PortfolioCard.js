@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function PortfolioCard({ slug, label, thumbnail, video }) {
+export default function PortfolioCard({ slug, title, image, video }) {
   const videoRef = useRef(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -30,10 +30,10 @@ export default function PortfolioCard({ slug, label, thumbnail, video }) {
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
       >
-        {thumbnail && (
+        {image && (
           <Image
-            src={thumbnail}
-            alt={`${label} tattoo by Onide — Edmonton, AB`}
+            src={image}
+            alt={`${title} tattoo by Onide — Edmonton, AB`}
             fill
             className={`object-cover transition-opacity duration-500 ${
               isHovering ? 'opacity-0' : 'opacity-100'
@@ -57,7 +57,7 @@ export default function PortfolioCard({ slug, label, thumbnail, video }) {
 
         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition" />
         <span className="absolute bottom-6 left-6 text-xl uppercase tracking-widest z-10">
-          {label}
+          {title}
         </span>
       </div>
     </Link>

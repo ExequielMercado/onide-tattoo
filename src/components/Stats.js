@@ -27,15 +27,14 @@ function Counter({ value, suffix = '' }) {
 }
 
 const stats = [
-  { value: 500, suffix: '+', label: 'Tattoos Done' },
-  { value: 5, suffix: '+', label: 'Years Experience' },
-  { value: 3, suffix: '', label: 'Signature Styles' },
+  { value: 1000, suffix: '+', label: 'Happy Clients' },
+  { value: 6, suffix: '+', label: 'Years Experience' },
 ];
 
 export default function Stats() {
   return (
     <section className="bg-black text-white py-20 px-6">
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 text-center">
         {stats.map((stat, i) => (
           <motion.div
             key={i}
@@ -44,14 +43,22 @@ export default function Stats() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: i * 0.1 }}
           >
-            <div className="text-5xl font-bold">
+            <div className="text-6xl md:text-7xl font-bold text-white">
               <Counter value={stat.value} suffix={stat.suffix} />
             </div>
-            <p className="mt-2 text-gray-400 uppercase tracking-widest text-sm">
+            <p className="mt-2 text-gray-300 uppercase tracking-widest text-xs">
               {stat.label}
             </p>
           </motion.div>
         ))}
+        <motion.div
+          aria-hidden="true"
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="h-px w-full origin-center bg-zinc-800 md:col-span-2"
+        />
       </div>
     </section>
   );

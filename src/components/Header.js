@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const links = [
-    { href: '/portafolio', label: 'Portfolio' },
+    { href: '#tattoos', label: 'Tattoos' },
     { href: '/aftercare', label: 'Aftercare' },
     { href: '/faq', label: 'FAQ' },
     { href: '/book', label: 'Book Consult' },
@@ -17,8 +18,15 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-black/80 backdrop-blur-md text-white">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-        <Link href="/" className="text-xl tracking-widest uppercase">
-          Onide Tattoo
+        <Link href="/" aria-label="Onide Tattoo home" className="relative h-16 w-48">
+          <Image
+            src="/logo.png"
+            alt="Onide Tattoo"
+            width={180}
+            height={60}
+            priority
+            className="h-full w-full object-contain object-left"
+          />
         </Link>
 
         <nav className="hidden md:flex gap-8">
