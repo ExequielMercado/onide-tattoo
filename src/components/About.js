@@ -35,7 +35,12 @@ export default function About() {
           <p className="text-gray-400 leading-relaxed">
             Kevin is a traveling tattoo artist from Córdoba, Argentina,
             currently based in Edmonton, Alberta, specializing in Black &amp;
-            Grey Realism, Neo Tribal, Cover-ups, and Custom Projects.
+            Grey Realism, Neo Tribal, Cover-ups, and Custom Projects. His work
+            focuses on anatomy, natural body flow, contrast, smooth shading,
+            and dynamic compositions designed to complement the movement and
+            structure of the body. Each tattoo is created as a one-of-one
+            piece, balancing the client&apos;s vision with clarity, longevity,
+            and a natural fit to the body.
           </p>
         </motion.div>
       </div>

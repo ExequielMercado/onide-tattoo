@@ -136,8 +136,10 @@ export default function BookingForm() {
   if (status === 'sent') {
     return (
       <div className="text-center py-32 text-white">
-        <h2 className="text-3xl uppercase tracking-widest mb-4">Thank you!</h2>
-        <p className="text-gray-400">Onide will get back to you shortly.</p>
+        <h2 className="text-3xl uppercase tracking-widest mb-4">Request sent!</h2>
+        <p className="text-gray-400">
+          Your request has been sent! Onide will review it and contact you to confirm the date.
+        </p>
       </div>
     );
   }

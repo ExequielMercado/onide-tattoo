@@ -40,7 +40,7 @@ const doDont = {
 
 export default function Aftercare() {
   return (
-    <section className="bg-black text-white min-h-screen px-6 py-24">
+    <section className="bg-black text-white min-h-screen px-6 pt-40 pb-24">
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

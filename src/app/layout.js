@@ -2,6 +2,7 @@ import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
+import Script from 'next/script';
 
 export const metadata = {
   metadataBase: new URL('https://onidetattoo.com'),
@@ -35,6 +36,15 @@ export default function RootLayout({ children }) {
         <main className="min-h-screen bg-black text-white">{children}</main>
         <Footer />
         <WhatsAppButton />
+        <Script strategy="afterInteractive" src="https://www.googletagmanager.com/gtag/js?id=G-6CNQHETBKS" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-6CNQHETBKS');
+          `}
+        </Script>
       </body>
     </html>
   );

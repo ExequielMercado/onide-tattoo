@@ -1,57 +1,23 @@
-import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
+import {
+  ARTIST_EMAIL,
+  createBookingToken,
+  createMailer,
+  escapeHtml,
+  getActionUrl,
+} from '@/lib/booking';
 
 export const runtime = 'nodejs';
-
-function getCalendarIds() {
-  return (process.env.CALENDARS_TO_CHECK || '')
-    .split(',')
-    .map((calendarId) => calendarId.trim())
-    .filter(Boolean);
-}
-
-function createCalendarClient() {
-  if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
-    throw new Error('Google Calendar credentials are not configured');
-  }
-
-  // Limpieza exhaustiva de la llave privada
-  let rawKey = process.env.GOOGLE_PRIVATE_KEY || "";
-  // 1. Reemplazar saltos de línea escapados (\\n) por saltos reales (\n)
-  let cleanKey = rawKey.replace(/\\n/g, '\n');
-  // 2. Limpiar comillas dobles o simples que Next.js haya dejado pegadas en los extremos
-  cleanKey = cleanKey.replace(/^"|"$/g, '').replace(/^'|'$/g, '');
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: cleanKey,
-    },
-    scopes: [
-      'https://www.googleapis.com/auth/calendar.events',
-      'https://www.googleapis.com/auth/calendar.readonly'
-    ]
-  });
-
-  return google.calendar({ version: 'v3', auth });
-}
 
 export async function POST(request) {
   try {
     const booking = await request.json();
-    const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    const calendarsToCheck = [...new Set([...getCalendarIds(), calendarId].filter(Boolean))];
-    const startTime = new Date(booking.preferredDates);
-
-    if (!calendarId || calendarsToCheck.length === 0) {
-      throw new Error('Google Calendar IDs are not configured');
-    }
 
     if (
       !booking.name ||
       !booking.email ||
       !booking.preferredDates ||
-      Number.isNaN(startTime.getTime())
+      Number.isNaN(new Date(booking.preferredDates).getTime())
     ) {
       return Response.json(
         { error: 'Name, email, and a valid preferred date are required' },
@@ -59,46 +25,30 @@ export async function POST(request) {
       );
     }
 
-    const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
-    const calendar = createCalendarClient();
-    const freeBusyResponse = await calendar.freebusy.query({
-      requestBody: {
-        timeMin: startTime.toISOString(),
-        timeMax: endTime.toISOString(),
-        items: calendarsToCheck.map((id) => ({ id })),
-      },
-    });
-
-    const busyCalendars = Object.values(freeBusyResponse.data.calendars || {});
-    const isBusy = busyCalendars.some((calendar) => (calendar.busy || []).length > 0);
-
-    if (isBusy) {
-      return NextResponse.json({ error: 'Time slot is already booked' }, { status: 409 });
-    }
-
-    await calendar.events.insert({
-      calendarId,
-      requestBody: {
-        summary: `Tattoo consultation — ${booking.name}`,
-        description: [
-          `Name: ${booking.name}`,
-          `Email: ${booking.email}`,
-          `Phone: ${booking.phone || 'Not provided'}`,
-          `Style: ${booking.style || 'Not provided'}`,
-          `Cover Up: ${booking.coverUp || 'Not provided'}`,
-          `Placement: ${booking.placement || 'Not provided'}`,
-          `Approx. Size: ${booking.size || 'Not provided'}`,
-          '',
-          'Description:',
-          booking.description || 'Not provided',
-        ].join('\n'),
-        start: {
-          dateTime: startTime.toISOString(),
-        },
-        end: {
-          dateTime: endTime.toISOString(),
-        },
-      },
+    const token = createBookingToken(booking);
+    const phone = (booking.phone || '').replace(/\D/g, '');
+    const mailer = createMailer();
+    await mailer.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: ARTIST_EMAIL,
+      subject: `New consultation request from ${booking.name}`,
+      html: `
+        <h2>New tattoo consultation request</h2>
+        <p><strong>Name:</strong> ${escapeHtml(booking.name)}</p>
+        <p><strong>Email:</strong> <a href="mailto:${escapeHtml(booking.email)}">${escapeHtml(booking.email)}</a></p>
+        <p><strong>Phone:</strong> ${escapeHtml(booking.phone || 'Not provided')}
+          ${phone ? `(<a href="https://wa.me/${phone}">Open WhatsApp</a>)` : ''}</p>
+        <p><strong>Style:</strong> ${escapeHtml(booking.style || 'Not provided')}</p>
+        <p><strong>Cover Up:</strong> ${escapeHtml(booking.coverUp || 'Not provided')}</p>
+        <p><strong>Placement:</strong> ${escapeHtml(booking.placement || 'Not provided')}</p>
+        <p><strong>Size:</strong> ${escapeHtml(booking.size || 'Not provided')}</p>
+        <p><strong>Preferred date:</strong> ${escapeHtml(new Date(booking.preferredDates).toLocaleString('en-CA'))}</p>
+        <p><strong>Description:</strong> ${escapeHtml(booking.description || 'Not provided')}</p>
+        <p>
+          <a href="${getActionUrl('/api/confirm-booking', token)}" style="background:#16a34a;color:#fff;padding:12px 18px;text-decoration:none;">Approve Appointment</a>
+          <a href="${getActionUrl('/api/reject-booking', token)}" style="background:#dc2626;color:#fff;padding:12px 18px;text-decoration:none;margin-left:8px;">Reject</a>
+        </p>
+      `,
     });
 
     return Response.json({ success: true }, { status: 200 });
