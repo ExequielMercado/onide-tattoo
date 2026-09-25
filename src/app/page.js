@@ -35,6 +35,9 @@ export default function Home() {
             playsInline
             poster="/videos/hero-poster.jpg"
             onPlay={() => setIsPlaying(true)}
+            onCanPlay={(event) => {
+              event.currentTarget.play().catch(() => {});
+            }}
             className="absolute inset-0 h-full w-full object-cover"
           >
             <source src="/videos/hero-realism.mp4" type="video/mp4" />

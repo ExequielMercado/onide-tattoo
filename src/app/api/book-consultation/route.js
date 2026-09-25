@@ -4,7 +4,6 @@ import {
   createBookingToken,
   createMailer,
   escapeHtml,
-  getActionUrl,
 } from '@/lib/booking';
 
 export const runtime = 'nodejs';
@@ -27,6 +26,13 @@ export async function POST(request) {
 
     const token = createBookingToken(booking);
     const phone = (booking.phone || '').replace(/\D/g, '');
+    const appUrl = (
+      process.env.APP_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      'http://localhost:3000'
+    ).replace(/\/$/, '');
+    const approveUrl = `${appUrl}/api/confirm-booking?data=${encodeURIComponent(token)}`;
+    const rejectUrl = `${appUrl}/api/reject-booking?data=${encodeURIComponent(token)}`;
     const mailer = createMailer();
     await mailer.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -45,8 +51,8 @@ export async function POST(request) {
         <p><strong>Preferred date:</strong> ${escapeHtml(new Date(booking.preferredDates).toLocaleString('en-CA'))}</p>
         <p><strong>Description:</strong> ${escapeHtml(booking.description || 'Not provided')}</p>
         <p>
-          <a href="${getActionUrl('/api/confirm-booking', token)}" style="background:#16a34a;color:#fff;padding:12px 18px;text-decoration:none;">Approve Appointment</a>
-          <a href="${getActionUrl('/api/reject-booking', token)}" style="background:#dc2626;color:#fff;padding:12px 18px;text-decoration:none;margin-left:8px;">Reject</a>
+          <a href="${approveUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#16a34a;border-radius:4px;">Approve Appointment</a>
+          <a href="${rejectUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#dc2626;border-radius:4px;margin-left:8px;">Reject</a>
         </p>
       `,
     });
