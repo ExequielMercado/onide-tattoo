@@ -26,11 +26,7 @@ export async function POST(request) {
 
     const token = createBookingToken(booking);
     const phone = (booking.phone || '').replace(/\D/g, '');
-    const appUrl = (
-      process.env.APP_URL ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      'http://localhost:3000'
-    ).replace(/\/$/, '');
+    const appUrl = "https://www.onidetattoo.com";
     const approveUrl = `${appUrl}/api/confirm-booking?data=${encodeURIComponent(token)}`;
     const rejectUrl = `${appUrl}/api/reject-booking?data=${encodeURIComponent(token)}`;
     const mailer = createMailer();
@@ -53,6 +49,10 @@ export async function POST(request) {
         <p>
           <a href="${approveUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#16a34a;border-radius:4px;">Approve Appointment</a>
           <a href="${rejectUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#dc2626;border-radius:4px;margin-left:8px;">Reject</a>
+        </p>
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">
+          Si los botones de arriba no funcionan, copia y pega el siguiente enlace en tu navegador para APROBAR la cita:<br>
+          <a href="${approveUrl}">${approveUrl}</a>
         </p>
       `,
     });
