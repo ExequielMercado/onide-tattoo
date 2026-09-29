@@ -16,11 +16,29 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.setAttribute('muted', '');
-      videoRef.current.play().catch(() => {});
-    }
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.defaultMuted = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('muted', '');
+
+    const attemptPlay = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.warn('Autoplay bloqueado temporalmente. Reintentando...', error);
+          setTimeout(() => {
+            video.play().catch((retryError) => {
+              console.error('Fallo definitivo de autoplay:', retryError);
+            });
+          }, 500);
+        });
+      }
+    };
+
+    attemptPlay();
   }, []);
 
   return (
@@ -35,9 +53,7 @@ export default function Home() {
             playsInline
             poster="/videos/hero-poster.jpg"
             onPlay={() => setIsPlaying(true)}
-            onCanPlay={(event) => {
-              event.currentTarget.play().catch(() => {});
-            }}
+            onLoadedData={() => videoRef.current?.play()}
             className="absolute inset-0 h-full w-full object-cover"
           >
             <source src="/videos/hero-realism.mp4" type="video/mp4" />
