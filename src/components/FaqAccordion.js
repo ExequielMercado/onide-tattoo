@@ -40,7 +40,7 @@ export default function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState(null);
 
   return (
-    <section className="bg-black text-white min-h-screen px-6 py-24">
+    <section className="relative z-10 min-h-screen bg-black px-6 pb-24 pt-32 text-white">
       <h1 className="text-4xl md:text-5xl text-center uppercase tracking-widest mb-16">
         FAQ
       </h1>
