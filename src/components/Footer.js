@@ -31,7 +31,7 @@ export default function Footer() {
             </svg>
           </a>
           <a
-            href="https://www.tiktok.com/@onidetattoo"
+            href="https://www.tiktok.com/@onide?is_from_webapp=1&sender_device=pc"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="TikTok"
