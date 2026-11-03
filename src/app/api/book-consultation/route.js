@@ -1,27 +1,55 @@
-import { NextResponse } from 'next/server';
 import {
   ARTIST_EMAIL,
   createBookingToken,
   createMailer,
   escapeHtml,
+  createCalendarClient,
+  ensureBookingIsFree,
+  getBookingTimes,
+  getCalendarIds,
+  formatEdmontonDateTime,
 } from '@/lib/booking';
 
 export const runtime = 'nodejs';
 
 export async function POST(request) {
   try {
-    const booking = await request.json();
+    const requestData = await request.json();
+    const booking = { ...requestData, style: '' };
 
     if (
       !booking.name ||
       !booking.email ||
-      !booking.preferredDates ||
-      Number.isNaN(new Date(booking.preferredDates).getTime())
+      !booking.preferredDates
     ) {
       return Response.json(
         { error: 'Name, email, and a valid preferred date are required' },
         { status: 400 },
       );
+    }
+
+    let startTime;
+    let endTime;
+    try {
+      ({ startTime, endTime } = getBookingTimes(booking));
+    } catch {
+      return Response.json({ error: 'A valid preferred date is required' }, { status: 400 });
+    }
+
+    const calendarId = process.env.GOOGLE_CALENDAR_ID;
+    if (!calendarId) {
+      throw new Error('GOOGLE_CALENDAR_ID is not configured');
+    }
+
+    const isAvailable = await ensureBookingIsFree(
+      createCalendarClient(),
+      calendarId,
+      getCalendarIds(),
+      startTime,
+      endTime,
+    );
+    if (!isAvailable) {
+      return Response.json({ error: 'Time slot is already booked' }, { status: 409 });
     }
 
     const token = createBookingToken(booking);
@@ -40,11 +68,10 @@ export async function POST(request) {
         <p><strong>Email:</strong> <a href="mailto:${escapeHtml(booking.email)}">${escapeHtml(booking.email)}</a></p>
         <p><strong>Phone:</strong> ${escapeHtml(booking.phone || 'Not provided')}
           ${phone ? `(<a href="https://wa.me/${phone}">Open WhatsApp</a>)` : ''}</p>
-        <p><strong>Style:</strong> ${escapeHtml(booking.style || 'Not provided')}</p>
         <p><strong>Cover Up:</strong> ${escapeHtml(booking.coverUp || 'Not provided')}</p>
         <p><strong>Placement:</strong> ${escapeHtml(booking.placement || 'Not provided')}</p>
         <p><strong>Size:</strong> ${escapeHtml(booking.size || 'Not provided')}</p>
-        <p><strong>Preferred date:</strong> ${escapeHtml(new Date(booking.preferredDates).toLocaleString('en-CA'))}</p>
+        <p><strong>Preferred date:</strong> ${escapeHtml(formatEdmontonDateTime(startTime))}</p>
         <p><strong>Description:</strong> ${escapeHtml(booking.description || 'Not provided')}</p>
         <p>
           <a href="${approveUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#16a34a;border-radius:4px;">Approve Appointment</a>

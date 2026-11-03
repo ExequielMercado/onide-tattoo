@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WORKING_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
@@ -9,15 +9,13 @@ function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function getAvailableSlots(date) {
-  return WORKING_SLOTS;
-}
-
 function formatDateTime(date, time) {
-  const [hours, minutes] = time.split(':').map(Number);
-  const appointment = new Date(date);
-  appointment.setHours(hours, minutes, 0, 0);
-  return appointment.toISOString();
+  const dayKey = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+  return `${dayKey}T${time}:00`;
 }
 
 function formatSelectedDate(date, time) {
@@ -30,7 +28,6 @@ const initialForm = {
   name: '',
   email: '',
   phone: '',
-  style: 'Realism',
   coverUp: '',
   placement: '',
   size: '',
@@ -48,6 +45,10 @@ export default function BookingForm() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [availability, setAvailability] = useState({
+    status: 'idle',
+    bookedSlots: [],
+  });
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
@@ -63,16 +64,60 @@ export default function BookingForm() {
     ];
   }, [calendarMonth]);
 
-  const availableSlots = selectedDate ? getAvailableSlots(selectedDate) : [];
+  useEffect(() => {
+    if (!selectedDate) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const dayKey = [
+      selectedDate.getFullYear(),
+      String(selectedDate.getMonth() + 1).padStart(2, '0'),
+      String(selectedDate.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    fetch(`/api/check-availability?date=${encodeURIComponent(dayKey)}`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Availability request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(({ bookedSlots }) => {
+        setAvailability({
+          status: 'loaded',
+          bookedSlots: Array.isArray(bookedSlots) ? bookedSlots : [],
+        });
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          console.error('Unable to load appointment availability:', error);
+          setAvailability({ status: 'error', bookedSlots: [] });
+        }
+      });
+
+    return () => controller.abort();
+  }, [selectedDate]);
 
   function selectDate(date) {
     setSelectedDate(date);
     setSelectedTime('');
     setStatus('idle');
+    setAvailability({ status: 'loading', bookedSlots: [] });
     setForm((currentForm) => ({ ...currentForm, preferredDates: '' }));
   }
 
   function selectTime(time) {
+    if (
+      availability.status !== 'loaded' ||
+      availability.bookedSlots.includes(time)
+    ) {
+      return;
+    }
+
     setSelectedTime(time);
     setStatus('idle');
     setForm((currentForm) => ({
@@ -100,7 +145,12 @@ export default function BookingForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!selectedDate || !selectedTime) {
+    if (
+      !selectedDate ||
+      !selectedTime ||
+      availability.status !== 'loaded' ||
+      availability.bookedSlots.includes(selectedTime)
+    ) {
       setStatus('error');
       return;
     }
@@ -115,6 +165,10 @@ export default function BookingForm() {
 
       if (response.status === 409) {
         setStatus('conflict');
+        setSelectedTime('');
+        setAvailability({ status: 'loading', bookedSlots: [] });
+        setForm((currentForm) => ({ ...currentForm, preferredDates: '' }));
+        setSelectedDate(new Date(selectedDate));
         return;
       }
 
@@ -126,6 +180,7 @@ export default function BookingForm() {
       setForm(initialForm);
       setSelectedDate(null);
       setSelectedTime('');
+      setAvailability({ status: 'idle', bookedSlots: [] });
       setIsOpen(false);
       setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     } catch (err) {
@@ -160,14 +215,6 @@ export default function BookingForm() {
       <div>
         <label className="block text-sm uppercase tracking-widest mb-2">Phone</label>
         <input name="phone" value={form.phone} onChange={handleChange} className="w-full bg-transparent border border-white/30 px-4 py-3 focus:border-white outline-none" />
-      </div>
-      <div>
-        <label className="block text-sm uppercase tracking-widest mb-2">Style</label>
-        <select name="style" value={form.style} onChange={handleChange} className="w-full bg-black border border-white/30 px-4 py-3 focus:border-white outline-none">
-          <option>Realism</option>
-          <option>Neo-Tribal</option>
-          <option>Custom project</option>
-        </select>
       </div>
       <div>
         <label className="block text-sm uppercase tracking-widest mb-2">Cover Up</label>
@@ -254,15 +301,27 @@ export default function BookingForm() {
               {selectedDate && (
                 <div className="mt-4 border-t border-white/10 pt-3">
                   <p className="mb-2 text-[10px] uppercase tracking-widest text-gray-400">
-                    Available times for {selectedDate.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
+                    {availability.status === 'loading'
+                      ? 'Checking availability...'
+                      : availability.status === 'error'
+                        ? 'Unable to load availability. Please try again.'
+                        : `Available times for ${selectedDate.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}`}
                   </p>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {availableSlots.map((time) => (
+                    {WORKING_SLOTS.map((time) => {
+                      const isBooked = availability.bookedSlots.includes(time);
+                      const isDisabled = availability.status !== 'loaded' || isBooked;
+                      return (
                       <button
                         type="button"
                         key={time}
                         onClick={() => selectTime(time)}
-                        className={`border px-1.5 py-1 text-xs transition ${
+                        disabled={isDisabled}
+                        aria-label={isBooked ? `${time}, booked` : time}
+                        className={`border px-1.5 py-1 text-xs transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                          isBooked
+                            ? 'border-white/10 text-gray-600 line-through'
+                            :
                           selectedTime === time
                             ? 'border-white bg-white text-black'
                             : 'border-white/30 text-gray-300 hover:border-white/70 hover:text-white'
@@ -270,8 +329,13 @@ export default function BookingForm() {
                       >
                         {time}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
+                  {availability.status === 'loaded' &&
+                    availability.bookedSlots.length === WORKING_SLOTS.length && (
+                      <p className="mt-2 text-xs text-gray-500">No times are available on this date.</p>
+                    )}
                 </div>
               )}
             </div>

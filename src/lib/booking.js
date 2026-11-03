@@ -3,6 +3,22 @@ import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
 
 export const ARTIST_EMAIL = 'onidetattoo@gmail.com';
+export const STUDIO_ADDRESS =
+  '10359 82 Ave NW, Suite 201, Edmonton, AB T6E 1Z9 (Whyte Ave, Old Strathcona) - Phantom Avenue';
+export const STUDIO_MAPS_URL =
+  'https://www.google.com/maps/search/?api=1&query=10359+82+Ave+NW+Suite+201+Edmonton+AB+T6E+1Z9';
+
+export const BOOKING_SLOTS = [
+  '12:00',
+  '12:30',
+  '13:00',
+  '13:30',
+  '14:00',
+  '14:30',
+  '15:00',
+  '15:30',
+  '16:00',
+];
 
 export function getCalendarIds() {
   return (process.env.CALENDARS_TO_CHECK || '')
@@ -66,6 +82,170 @@ export function escapeHtml(value = '') {
     .replace(/'/g, '&#039;');
 }
 
+function getZonedDateParts(date) {
+  const parts = getDateTimePartsInEdmonton(date);
+  return {
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+  };
+}
+
+function getNthSunday(year, monthIndex, occurrence) {
+  const firstDayOfMonth = new Date(Date.UTC(year, monthIndex, 1));
+  const firstSunday = 1 + ((7 - firstDayOfMonth.getUTCDay()) % 7);
+  return firstSunday + (occurrence - 1) * 7;
+}
+
+function getEdmontonOffsetMinutes(date) {
+  const year = date.getUTCFullYear();
+  const daylightTimeStarts = Date.UTC(
+    year,
+    2,
+    getNthSunday(year, 2, 2),
+    9,
+  );
+  const daylightTimeEnds = Date.UTC(
+    year,
+    10,
+    getNthSunday(year, 10, 1),
+    8,
+  );
+
+  return date.getTime() >= daylightTimeStarts && date.getTime() < daylightTimeEnds
+    ? -6 * 60
+    : -7 * 60;
+}
+
+function getDateTimePartsInEdmonton(date) {
+  const localDate = new Date(date.getTime() + getEdmontonOffsetMinutes(date) * 60 * 1000);
+  return {
+    year: String(localDate.getUTCFullYear()),
+    month: String(localDate.getUTCMonth() + 1).padStart(2, '0'),
+    day: String(localDate.getUTCDate()).padStart(2, '0'),
+    hour: String(localDate.getUTCHours()).padStart(2, '0'),
+    minute: String(localDate.getUTCMinutes()).padStart(2, '0'),
+    second: String(localDate.getUTCSeconds()).padStart(2, '0'),
+  };
+}
+
+export function formatEdmontonDateTimeWithOffset(date) {
+  const parts = getDateTimePartsInEdmonton(date);
+  const offsetMinutes = getEdmontonOffsetMinutes(date);
+  const sign = offsetMinutes < 0 ? '-' : '+';
+  const absoluteOffset = Math.abs(offsetMinutes);
+  const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
+  const offsetRemainder = String(absoluteOffset % 60).padStart(2, '0');
+
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${offsetHours}:${offsetRemainder}`;
+}
+
+function getUtcTimeForZonedDateTime(year, month, day, hour = 0, minute = 0, second = 0) {
+  const requestedUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  const candidates = [-6 * 60, -7 * 60]
+    .map((offsetMinutes) => new Date(requestedUtc - offsetMinutes * 60 * 1000))
+    .filter((candidate) => {
+      const actual = getDateTimePartsInEdmonton(candidate);
+      return (
+        Number(actual.year) === year &&
+        Number(actual.month) === month &&
+        Number(actual.day) === day &&
+        Number(actual.hour) === hour &&
+        Number(actual.minute) === minute &&
+        Number(actual.second) === second
+      );
+    });
+
+  if (candidates.length === 0) {
+    throw new Error('The requested Edmonton local time does not exist');
+  }
+
+  return candidates[0];
+}
+
+export function getEdmontonDayRange(dayKey) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dayKey || '');
+  if (!match) {
+    throw new Error('Invalid date; expected YYYY-MM-DD');
+  }
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error('Invalid calendar date');
+  }
+
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  return {
+    dayKey,
+    timeMin: getUtcTimeForZonedDateTime(year, month, day),
+    timeMax: getUtcTimeForZonedDateTime(
+      nextDate.getUTCFullYear(),
+      nextDate.getUTCMonth() + 1,
+      nextDate.getUTCDate(),
+    ),
+  };
+}
+
+export function getTomorrowInEdmonton(now = new Date()) {
+  const todayParts = getZonedDateParts(now);
+  const tomorrow = new Date(Date.UTC(
+    Number(todayParts.year),
+    Number(todayParts.month) - 1,
+    Number(todayParts.day) + 1,
+  ));
+  const dayAfter = new Date(tomorrow);
+  dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
+
+  return {
+    dayKey: tomorrow.toISOString().slice(0, 10),
+    timeMin: getUtcTimeForZonedDateTime(
+      tomorrow.getUTCFullYear(),
+      tomorrow.getUTCMonth() + 1,
+      tomorrow.getUTCDate(),
+    ),
+    timeMax: getUtcTimeForZonedDateTime(
+      dayAfter.getUTCFullYear(),
+      dayAfter.getUTCMonth() + 1,
+      dayAfter.getUTCDate(),
+    ),
+  };
+}
+
+export function formatEdmontonDateTime(date) {
+  const localDate = new Date(date.getTime() + getEdmontonOffsetMinutes(date) * 60 * 1000);
+  return new Intl.DateTimeFormat('en-CA', {
+    dateStyle: 'full',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(localDate);
+}
+
+export function getBookingContactFromEvent(event) {
+  const description = event.description || '';
+  const fields = Object.fromEntries(
+    description.split(/\r?\n/).map((line) => {
+      const separator = line.indexOf(':');
+      return separator < 0
+        ? ['', '']
+        : [line.slice(0, separator).trim().toLowerCase(), line.slice(separator + 1).trim()];
+    }),
+  );
+
+  return {
+    email: event.extendedProperties?.private?.bookingEmail || fields.email || '',
+    name: event.extendedProperties?.private?.bookingName || fields.name || 'there',
+  };
+}
+
 export function createBookingToken(booking) {
   const payload = Buffer.from(JSON.stringify(booking)).toString('base64url');
   const secret = process.env.BOOKING_APPROVAL_SECRET;
@@ -105,7 +285,45 @@ export function getActionUrl(path, token) {
 }
 
 export function getBookingTimes(booking) {
-  const startTime = new Date(booking.preferredDates);
+  const localDateTime = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(
+    booking.preferredDates || '',
+  );
+  let startTime;
+
+  if (localDateTime) {
+    const [, yearText, monthText, dayText, hourText, minuteText, secondText = '0'] =
+      localDateTime;
+    const requested = {
+      year: Number(yearText),
+      month: Number(monthText),
+      day: Number(dayText),
+      hour: Number(hourText),
+      minute: Number(minuteText),
+      second: Number(secondText),
+    };
+
+    startTime = getUtcTimeForZonedDateTime(
+      requested.year,
+      requested.month,
+      requested.day,
+      requested.hour,
+      requested.minute,
+      requested.second,
+    );
+    const actual = getDateTimePartsInEdmonton(startTime);
+    if (
+      Number(actual.year) !== requested.year ||
+      Number(actual.month) !== requested.month ||
+      Number(actual.day) !== requested.day ||
+      Number(actual.hour) !== requested.hour ||
+      Number(actual.minute) !== requested.minute ||
+      Number(actual.second) !== requested.second
+    ) {
+      throw new Error('Preferred date is not a valid Edmonton local time');
+    }
+  } else {
+    startTime = new Date(booking.preferredDates);
+  }
 
   if (Number.isNaN(startTime.getTime())) {
     throw new Error('Invalid booking date');
@@ -115,6 +333,14 @@ export function getBookingTimes(booking) {
     startTime,
     endTime: new Date(startTime.getTime() + 30 * 60 * 1000),
   };
+}
+
+export function getBookingSlotTimes(dayKey, time) {
+  if (!BOOKING_SLOTS.includes(time)) {
+    throw new Error('Invalid booking time');
+  }
+
+  return getBookingTimes({ preferredDates: `${dayKey}T${time}:00` });
 }
 
 export async function ensureBookingIsFree(calendar, calendarId, calendarsToCheck, startTime, endTime) {
@@ -140,7 +366,6 @@ export function getBookingDescription(booking) {
     `Name: ${booking.name}`,
     `Email: ${booking.email}`,
     `Phone: ${booking.phone || 'Not provided'}`,
-    `Style: ${booking.style || 'Not provided'}`,
     `Cover Up: ${booking.coverUp || 'Not provided'}`,
     `Placement: ${booking.placement || 'Not provided'}`,
     `Approx. Size: ${booking.size || 'Not provided'}`,
