@@ -73,8 +73,6 @@ export async function GET(request) {
       }
 
       const appointmentDate = formatEdmontonDateTime(new Date(event.start.dateTime));
-      const yesUrl = `${baseUrl}/api/attendance?action=yes&id=${encodeURIComponent(event.id)}`;
-      const noUrl = `${baseUrl}/api/attendance?action=no&id=${encodeURIComponent(event.id)}`;
 
       try {
         await mailer.sendMail({
@@ -88,8 +86,8 @@ export async function GET(request) {
             <p><a href="${STUDIO_MAPS_URL}">${STUDIO_MAPS_URL}</a></p>
             <p>Please let us know if you will attend:</p>
             <p>
-              <a href="${yesUrl}" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#16a34a;border-radius:4px;">Yes, I’ll attend</a>
-              <a href="${noUrl}" style="display:inline-block;text-decoration:none;padding:10px 20px;color:#ffffff;background-color:#dc2626;border-radius:4px;margin-left:8px;">I can’t attend</a>
+              <a href="${baseUrl}/api/attendance?action=yes&eventId=${event.id}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; margin-right: 15px;">Yes, I'll attend</a>
+              <a href="${baseUrl}/api/attendance?action=no&eventId=${event.id}" style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">I can't attend</a>
             </p>
           `,
         });

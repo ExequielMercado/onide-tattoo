@@ -23,7 +23,7 @@ function responsePage(title, message, status = 200) {
 export async function GET(request) {
   const url = new URL(request.url);
   const action = url.searchParams.get('action');
-  const eventId = url.searchParams.get('id');
+  const eventId = url.searchParams.get('eventId') || url.searchParams.get('id');
 
   if (!eventId || (action !== 'yes' && action !== 'no')) {
     return responsePage('Invalid response', 'The attendance link is missing or invalid.', 400);
