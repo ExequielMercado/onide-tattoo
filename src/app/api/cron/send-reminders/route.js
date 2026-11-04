@@ -74,7 +74,7 @@ export async function GET(request) {
 
       const appointmentDate = formatEdmontonDateTime(new Date(event.start.dateTime));
 
-      try {
+     try {
         await mailer.sendMail({
           from: process.env.SMTP_FROM || process.env.SMTP_USER,
           to: email,
@@ -82,13 +82,12 @@ export async function GET(request) {
           html: `
             <p>Hi ${escapeHtml(name)},</p>
             <p>This is a reminder that your tattoo appointment is scheduled for <strong>${escapeHtml(appointmentDate)}</strong>.</p>
-            <p>📍 Location: ${escapeHtml(STUDIO_ADDRESS)}</p>
-            <p><a href="${STUDIO_MAPS_URL}">${STUDIO_MAPS_URL}</a></p>
+            <p>📍 Location: 10359 82 Ave NW, Suite 201, Edmonton, AB T6E 1Z9 (Whyte Ave, Old Strathcona) - Phantom Avenue - <a href="https://www.google.com/maps/search/?api=1&query=10359+82+Ave+NW+Suite+201+Edmonton+AB+T6E+1Z9">View on Google Maps</a></p>
             <p>Please let us know if you will attend:</p>
-            <p>
-              <a href="${baseUrl}/api/attendance?action=yes&eventId=${event.id}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; margin-right: 15px;">Yes, I'll attend</a>
-              <a href="${baseUrl}/api/attendance?action=no&eventId=${event.id}" style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">I can't attend</a>
-            </p>
+            <div style="margin-top: 20px;">
+              <a href="https://www.onidetattoo.com/api/attendance?action=yes&id=${event.id}" style="display:inline-block;padding:12px 24px;background-color:#28a745;color:white;text-decoration:none;border-radius:5px;font-weight:bold;margin-right:15px;">Yes, I'll attend</a>
+              <a href="https://www.onidetattoo.com/api/attendance?action=no&id=${event.id}" style="display:inline-block;padding:12px 24px;background-color:#dc3545;color:white;text-decoration:none;border-radius:5px;font-weight:bold;">I can't attend</a>
+            </div>
           `,
         });
 
