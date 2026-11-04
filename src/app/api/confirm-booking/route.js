@@ -29,14 +29,14 @@ function getCalendarDateTimes(preferredDates) {
     Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute)),
   );
   const localEnd = new Date(localStart.getTime() + 30 * 60 * 1000);
-  const formatLocal = (date) => {
+  const formatLocalDateTime = (date) => {
     const pad = (value) => String(value).padStart(2, '0');
-    return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:00-07:00`;
+    return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:00`;
   };
 
   return {
-    startDateTime: `${year}-${month}-${day}T${hour}:${minute}:00-07:00`,
-    endDateTime: formatLocal(localEnd),
+    startDateTime: `${year}-${month}-${day}T${hour}:${minute}:00`,
+    endDateTime: formatLocalDateTime(localEnd),
   };
 }
 
