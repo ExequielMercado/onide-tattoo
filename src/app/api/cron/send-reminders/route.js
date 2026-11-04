@@ -11,13 +11,6 @@ import {
 
 export const runtime = 'nodejs';
 
-function getAttendanceUrl(appUrl, action, eventId) {
-  const url = new URL('/api/attendance', appUrl);
-  url.searchParams.set('action', action);
-  url.searchParams.set('id', eventId);
-  return url.toString();
-}
-
 export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
@@ -31,16 +24,9 @@ export async function GET(request) {
 
   try {
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    const appUrl = process.env.APP_URL;
-    if (!calendarId || !appUrl) {
-      throw new Error('GOOGLE_CALENDAR_ID and APP_URL must be configured');
-    }
-    const appUrlObject = new URL(appUrl);
-    if (
-      !['https:', 'http:'].includes(appUrlObject.protocol) ||
-      (process.env.NODE_ENV === 'production' && appUrlObject.protocol !== 'https:')
-    ) {
-      throw new Error('APP_URL must be an HTTPS URL in production');
+    const baseUrl = process.env.APP_URL || 'https://www.onidetattoo.com';
+    if (!calendarId) {
+      throw new Error('GOOGLE_CALENDAR_ID must be configured');
     }
 
     const { dayKey, timeMin, timeMax } = getTomorrowInEdmonton();
@@ -87,8 +73,8 @@ export async function GET(request) {
       }
 
       const appointmentDate = formatEdmontonDateTime(new Date(event.start.dateTime));
-      const yesUrl = getAttendanceUrl(appUrlObject.origin, 'yes', event.id);
-      const noUrl = getAttendanceUrl(appUrlObject.origin, 'no', event.id);
+      const yesUrl = `${baseUrl}/api/attendance?action=yes&id=${encodeURIComponent(event.id)}`;
+      const noUrl = `${baseUrl}/api/attendance?action=no&id=${encodeURIComponent(event.id)}`;
 
       try {
         await mailer.sendMail({
